@@ -1,4 +1,4 @@
-import { Node, Ast, CustomElementOptions } from 'interfaces';
+import { Node, Ast, CustomElementOptions } from './interfaces';
 interface ParserOptions {
     filename?: string;
     bind?: boolean;
