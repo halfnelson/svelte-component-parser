@@ -1,5 +1,5 @@
 {
-  "name": "svelte-template-parser",
+  "name": "svelte-component-parser",
   "version": "3.0.0-beta.9",
   "description": "Parses svelte component to AST",
   "main": "index",
