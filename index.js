@@ -5123,17 +5123,17 @@ const parse$1 = (source) => Parser$1.parse(source, {
 	preserveParens: true
 });
 
-const parseExpressionAt$1 = (source, index) => Parser$1.parseExpressionAt(source, index, {
+const parse_expression_at = (source, index) => Parser$1.parseExpressionAt(source, index, {
 	ecmaVersion: 9,
 	preserveParens: true
 });
 
 const literals = new Map([['true', true], ['false', false], ['null', null]]);
 
-function readExpression(parser) {
+function read_expression(parser) {
 	const start = parser.index;
 
-	const name = parser.readUntil(/\s*}/);
+	const name = parser.read_until(/\s*}/);
 	if (name && /^[a-z]+$/.test(name)) {
 		const end = start + name.length;
 
@@ -5158,12 +5158,12 @@ function readExpression(parser) {
 	parser.index = start;
 
 	try {
-		const node = parseExpressionAt$1(parser.template, parser.index);
+		const node = parse_expression_at(parser.template, parser.index);
 		parser.index = node.end;
 
 		return node;
 	} catch (err) {
-		parser.acornError(err);
+		parser.acorn_error(err);
 	}
 }
 
@@ -5173,7 +5173,7 @@ function repeat(str, i) {
 	return result;
 }
 
-const scriptClosingTag = '</script>';
+const script_closing_tag = '</script>';
 
 function get_context(parser, attributes, start) {
 	const context = attributes.find(attribute => attribute.name === 'context');
@@ -5198,28 +5198,28 @@ function get_context(parser, attributes, start) {
 	return value;
 }
 
-function readScript(parser, start, attributes) {
-	const scriptStart = parser.index;
-	const scriptEnd = parser.template.indexOf(scriptClosingTag, scriptStart);
+function read_script(parser, start, attributes) {
+	const script_start = parser.index;
+	const script_end = parser.template.indexOf(script_closing_tag, script_start);
 
-	if (scriptEnd === -1) parser.error({
+	if (script_end === -1) parser.error({
 		code: `unclosed-script`,
 		message: `<script> must have a closing tag`
 	});
 
 	const source =
-		repeat(' ', scriptStart) + parser.template.slice(scriptStart, scriptEnd);
-	parser.index = scriptEnd + scriptClosingTag.length;
+		repeat(' ', script_start) + parser.template.slice(script_start, script_end);
+	parser.index = script_end + script_closing_tag.length;
 
 	let ast;
 
 	try {
 		ast = parse$1(source);
 	} catch (err) {
-		parser.acornError(err);
+		parser.acorn_error(err);
 	}
 
-	ast.start = scriptStart;
+	ast.start = script_start;
 	return {
 		start,
 		end: parser.index,
@@ -9874,17 +9874,17 @@ function visit(node, parent, enter, leave, prop, index) {
 	}
 }
 
-function readStyle(parser, start, attributes) {
-	const contentStart = parser.index;
-	const styles = parser.readUntil(/<\/style>/);
-	const contentEnd = parser.index;
+function read_style(parser, start, attributes) {
+	const content_start = parser.index;
+	const styles = parser.read_until(/<\/style>/);
+	const content_end = parser.index;
 
 	let ast;
 
 	try {
 		ast = parser$1(styles, {
 			positions: true,
-			offset: contentStart,
+			offset: content_start,
 		});
 	} catch (err) {
 		if (err.name === 'CssSyntaxError') {
@@ -9908,7 +9908,7 @@ function readStyle(parser, start, attributes) {
 					const a = node.children[i];
 					const b = node.children[i + 1];
 
-					if (isRefSelector(a, b)) {
+					if (is_ref_selector(a, b)) {
 						parser.error({
 							code: `invalid-ref-selector`,
 							message: 'ref selectors are no longer supported'
@@ -9934,14 +9934,14 @@ function readStyle(parser, start, attributes) {
 		attributes,
 		children: ast.children,
 		content: {
-			start: contentStart,
-			end: contentEnd,
+			start: content_start,
+			end: content_end,
 			styles,
 		},
 	};
 }
 
-function isRefSelector(a, b) {
+function is_ref_selector(a, b) {
 	if (!b) return false;
 
 	return (
@@ -9952,7 +9952,7 @@ function isRefSelector(a, b) {
 }
 
 // https://dev.w3.org/html5/html-author/charref
-var htmlEntities = {
+var entities = {
 	CounterClockwiseContourIntegral: 8755,
 	ClockwiseContourIntegral: 8754,
 	DoubleLongLeftRightArrow: 10234,
@@ -11986,7 +11986,7 @@ var htmlEntities = {
 	xi: 958,
 };
 
-const windows1252 = [
+const windows_1252 = [
 	8364,
 	129,
 	8218,
@@ -12020,18 +12020,19 @@ const windows1252 = [
 	382,
 	376,
 ];
-const entityPattern = new RegExp(
-	`&(#?(?:x[\\w\\d]+|\\d+|${Object.keys(htmlEntities).join('|')}));?`,
+
+const entity_pattern = new RegExp(
+	`&(#?(?:x[\\w\\d]+|\\d+|${Object.keys(entities).join('|')}));?`,
 	'g'
 );
 
-function decodeCharacterReferences(html) {
-	return html.replace(entityPattern, (match, entity) => {
+function decode_character_references(html) {
+	return html.replace(entity_pattern, (match, entity) => {
 		let code;
 
 		// Handle named entities
 		if (entity[0] !== '#') {
-			code = htmlEntities[entity];
+			code = entities[entity];
 		} else if (entity[1] === 'x') {
 			code = parseInt(entity.substring(2), 16);
 		} else {
@@ -12042,7 +12043,7 @@ function decodeCharacterReferences(html) {
 			return match;
 		}
 
-		return String.fromCodePoint(validateCode(code));
+		return String.fromCodePoint(validate_code(code));
 	});
 }
 
@@ -12053,7 +12054,7 @@ const NUL = 0;
 // to replace them ourselves
 //
 // Source: http://en.wikipedia.org/wiki/Character_encodings_in_HTML#Illegal_characters
-function validateCode(code) {
+function validate_code(code) {
 	// line feed becomes generic whitespace
 	if (code === 10) {
 		return 32;
@@ -12067,7 +12068,7 @@ function validateCode(code) {
 	// code points 128-159 are dealt with leniently by browsers, but they're incorrect. We need
 	// to correct the mistake or we'll end up with missing € signs and so on
 	if (code <= 159) {
-		return windows1252[code - 128];
+		return windows_1252[code - 128];
 	}
 
 	// basic multilingual plane
@@ -12098,10 +12099,72 @@ function validateCode(code) {
 	return NUL;
 }
 
-const voidElementNames = /^(?:area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
+// Adapted from https://github.com/acornjs/acorn/blob/6584815dca7440e00de841d1dad152302fdd7ca5/src/tokenize.js
+// Reproduced under MIT License https://github.com/acornjs/acorn/blob/master/LICENSE
 
-function isVoidElementName(name) {
-	return voidElementNames.test(name) || name.toLowerCase() === '!doctype';
+function full_char_code_at(str, i) {
+	let code = str.charCodeAt(i);
+	if (code <= 0xd7ff || code >= 0xe000) return code;
+
+	let next = str.charCodeAt(i + 1);
+	return (code << 10) + next - 0x35fdc00;
+}
+
+const reserved = new Set([
+	'arguments',
+	'await',
+	'break',
+	'case',
+	'catch',
+	'class',
+	'const',
+	'continue',
+	'debugger',
+	'default',
+	'delete',
+	'do',
+	'else',
+	'enum',
+	'eval',
+	'export',
+	'extends',
+	'false',
+	'finally',
+	'for',
+	'function',
+	'if',
+	'implements',
+	'import',
+	'in',
+	'instanceof',
+	'interface',
+	'let',
+	'new',
+	'null',
+	'package',
+	'private',
+	'protected',
+	'public',
+	'return',
+	'static',
+	'super',
+	'switch',
+	'this',
+	'throw',
+	'true',
+	'try',
+	'typeof',
+	'var',
+	'void',
+	'while',
+	'with',
+	'yield',
+]);
+
+const void_element_names = /^(?:area|base|br|col|command|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)$/;
+
+function is_void(name) {
+	return void_element_names.test(name) || name.toLowerCase() === '!doctype';
 }
 
 function fuzzymatch(name, names) {
@@ -12159,30 +12222,28 @@ function levenshtein(str1, str2) {
 	return current.pop();
 }
 
-const _nonWordRe = /[^\w, ]+/;
+const non_word_regex = /[^\w, ]+/;
 
-function _iterateGrams(value, gramSize) {
-	gramSize = gramSize || 2;
-	const simplified = '-' + value.toLowerCase().replace(_nonWordRe, '') + '-';
-	const lenDiff = gramSize - simplified.length;
+function iterate_grams(value, gram_size = 2) {
+	const simplified = '-' + value.toLowerCase().replace(non_word_regex, '') + '-';
+	const len_diff = gram_size - simplified.length;
 	const results = [];
 
-	if (lenDiff > 0) {
-		for (let i = 0; i < lenDiff; ++i) {
+	if (len_diff > 0) {
+		for (let i = 0; i < len_diff; ++i) {
 			value += '-';
 		}
 	}
-	for (let i = 0; i < simplified.length - gramSize + 1; ++i) {
-		results.push(simplified.slice(i, i + gramSize));
+	for (let i = 0; i < simplified.length - gram_size + 1; ++i) {
+		results.push(simplified.slice(i, i + gram_size));
 	}
 	return results;
 }
 
-function _gramCounter(value, gramSize) {
+function gram_counter(value, gram_size = 2) {
 	// return an object where key=gram, value=number of occurrences
-	gramSize = gramSize || 2;
 	const result = {};
-	const grams = _iterateGrams(value, gramSize);
+	const grams = iterate_grams(value, gram_size);
 	let i = 0;
 
 	for (i; i < grams.length; ++i) {
@@ -12195,25 +12256,21 @@ function _gramCounter(value, gramSize) {
 	return result;
 }
 
-function sortDescending(a, b) {
+function sort_descending(a, b) {
 	return b[0] - a[0];
 }
 
 class FuzzySet {
-	
-	
-	
+	__init() {this.exact_set = {};}
+	__init2() {this.match_dict = {};}
+	__init3() {this.items = {};}
 
-	constructor(arr) {
-		// define all the object functions and attributes
-		this.exactSet = {};
-		this.matchDict = {};
-		this.items = {};
-
+	constructor(arr) {FuzzySet.prototype.__init.call(this);FuzzySet.prototype.__init2.call(this);FuzzySet.prototype.__init3.call(this);
 		// initialization
 		for (let i = GRAM_SIZE_LOWER; i < GRAM_SIZE_UPPER + 1; ++i) {
 			this.items[i] = [];
 		}
+
 		// add all the items to the set
 		for (let i = 0; i < arr.length; ++i) {
 			this.add(arr[i]);
@@ -12221,8 +12278,8 @@ class FuzzySet {
 	}
 
 	add(value) {
-		const normalizedValue = value.toLowerCase();
-		if (normalizedValue in this.exactSet) {
+		const normalized_value = value.toLowerCase();
+		if (normalized_value in this.exact_set) {
 			return false;
 		}
 
@@ -12232,35 +12289,35 @@ class FuzzySet {
 		}
 	}
 
-	_add(value, gramSize) {
-		const normalizedValue = value.toLowerCase();
-		const items = this.items[gramSize] || [];
+	_add(value, gram_size) {
+		const normalized_value = value.toLowerCase();
+		const items = this.items[gram_size] || [];
 		const index = items.length;
 
 		items.push(0);
-		const gramCounts = _gramCounter(normalizedValue, gramSize);
-		let sumOfSquareGramCounts = 0;
+		const gram_counts = gram_counter(normalized_value, gram_size);
+		let sum_of_square_gram_counts = 0;
 		let gram;
-		let gramCount;
+		let gram_count;
 
-		for (gram in gramCounts) {
-			gramCount = gramCounts[gram];
-			sumOfSquareGramCounts += Math.pow(gramCount, 2);
-			if (gram in this.matchDict) {
-				this.matchDict[gram].push([index, gramCount]);
+		for (gram in gram_counts) {
+			gram_count = gram_counts[gram];
+			sum_of_square_gram_counts += Math.pow(gram_count, 2);
+			if (gram in this.match_dict) {
+				this.match_dict[gram].push([index, gram_count]);
 			} else {
-				this.matchDict[gram] = [[index, gramCount]];
+				this.match_dict[gram] = [[index, gram_count]];
 			}
 		}
-		const vectorNormal = Math.sqrt(sumOfSquareGramCounts);
-		items[index] = [vectorNormal, normalizedValue];
-		this.items[gramSize] = items;
-		this.exactSet[normalizedValue] = value;
+		const vector_normal = Math.sqrt(sum_of_square_gram_counts);
+		items[index] = [vector_normal, normalized_value];
+		this.items[gram_size] = items;
+		this.exact_set[normalized_value] = value;
 	};
 
 	get(value) {
-		const normalizedValue = value.toLowerCase();
-		const result = this.exactSet[normalizedValue];
+		const normalized_value = value.toLowerCase();
+		const result = this.exact_set[normalized_value];
 
 		if (result) {
 			return [[1, result]];
@@ -12269,11 +12326,11 @@ class FuzzySet {
 		let results = [];
 		// start with high gram size and if there are no results, go to lower gram sizes
 		for (
-			let gramSize = GRAM_SIZE_UPPER;
-			gramSize >= GRAM_SIZE_LOWER;
-			--gramSize
+			let gram_size = GRAM_SIZE_UPPER;
+			gram_size >= GRAM_SIZE_LOWER;
+			--gram_size
 		) {
-			results = this.__get(value, gramSize);
+			results = this.__get(value, gram_size);
 			if (results) {
 				return results;
 			}
@@ -12281,69 +12338,69 @@ class FuzzySet {
 		return null;
 	}
 
-	__get(value, gramSize) {
-		const normalizedValue = value.toLowerCase();
+	__get(value, gram_size) {
+		const normalized_value = value.toLowerCase();
 		const matches = {};
-		const gramCounts = _gramCounter(normalizedValue, gramSize);
-		const items = this.items[gramSize];
-		let sumOfSquareGramCounts = 0;
+		const gram_counts = gram_counter(normalized_value, gram_size);
+		const items = this.items[gram_size];
+		let sum_of_square_gram_counts = 0;
 		let gram;
-		let gramCount;
+		let gram_count;
 		let i;
 		let index;
-		let otherGramCount;
+		let other_gram_count;
 
-		for (gram in gramCounts) {
-			gramCount = gramCounts[gram];
-			sumOfSquareGramCounts += Math.pow(gramCount, 2);
-			if (gram in this.matchDict) {
-				for (i = 0; i < this.matchDict[gram].length; ++i) {
-					index = this.matchDict[gram][i][0];
-					otherGramCount = this.matchDict[gram][i][1];
+		for (gram in gram_counts) {
+			gram_count = gram_counts[gram];
+			sum_of_square_gram_counts += Math.pow(gram_count, 2);
+			if (gram in this.match_dict) {
+				for (i = 0; i < this.match_dict[gram].length; ++i) {
+					index = this.match_dict[gram][i][0];
+					other_gram_count = this.match_dict[gram][i][1];
 					if (index in matches) {
-						matches[index] += gramCount * otherGramCount;
+						matches[index] += gram_count * other_gram_count;
 					} else {
-						matches[index] = gramCount * otherGramCount;
+						matches[index] = gram_count * other_gram_count;
 					}
 				}
 			}
 		}
 
-		const vectorNormal = Math.sqrt(sumOfSquareGramCounts);
+		const vector_normal = Math.sqrt(sum_of_square_gram_counts);
 		let results = [];
-		let matchScore;
+		let match_score;
 
 		// build a results list of [score, str]
-		for (const matchIndex in matches) {
-			matchScore = matches[matchIndex];
+		for (const match_index in matches) {
+			match_score = matches[match_index];
 			results.push([
-				matchScore / (vectorNormal * items[matchIndex][0]),
-				items[matchIndex][1],
+				match_score / (vector_normal * items[match_index][0]),
+				items[match_index][1],
 			]);
 		}
 
-		results.sort(sortDescending);
+		results.sort(sort_descending);
 
-		let newResults = [];
-		const endIndex = Math.min(50, results.length);
+		let new_results = [];
+		const end_index = Math.min(50, results.length);
 		// truncate somewhat arbitrarily to 50
-		for (let i = 0; i < endIndex; ++i) {
-			newResults.push([
-				_distance(results[i][1], normalizedValue),
+		for (let i = 0; i < end_index; ++i) {
+			new_results.push([
+				_distance(results[i][1], normalized_value),
 				results[i][1],
 			]);
 		}
-		results = newResults;
-		results.sort(sortDescending);
+		results = new_results;
+		results.sort(sort_descending);
 
-		newResults = [];
+		new_results = [];
 		for (let i = 0; i < results.length; ++i) {
 			if (results[i][0] == results[0][0]) {
-				newResults.push([results[i][0], this.exactSet[results[i][1]]]);
+				new_results.push([results[i][0], this.exact_set[results[i][1]]]);
 			}
 		}
 
-		return newResults;
+		return new_results;
 	};
 }
 
@@ -12354,29 +12411,29 @@ function list$1(items, conjunction = 'or') {
 	]}`;
 }
 
-const validTagName = /^\!?[a-zA-Z]{1,}:?[a-zA-Z0-9\-]*/;
+const valid_tag_name = /^\!?[a-zA-Z]{1,}:?[a-zA-Z0-9\-]*/;
 
-const metaTags = new Map([
+const meta_tags = new Map([
 	['svelte:head', 'Head'],
 	['svelte:options', 'Options'],
 	['svelte:window', 'Window'],
 	['svelte:body', 'Body']
 ]);
 
-const valid_meta_tags = Array.from(metaTags.keys()).concat('svelte:self', 'svelte:component');
+const valid_meta_tags = Array.from(meta_tags.keys()).concat('svelte:self', 'svelte:component');
 
 const specials = new Map([
 	[
 		'script',
 		{
-			read: readScript,
+			read: read_script,
 			property: 'js',
 		},
 	],
 	[
 		'style',
 		{
-			read: readStyle,
+			read: read_style,
 			property: 'css',
 		},
 	],
@@ -12386,7 +12443,7 @@ const SELF = /^svelte:self(?=[\s\/>])/;
 const COMPONENT = /^svelte:component(?=[\s\/>])/;
 
 // based on http://developers.whatwg.org/syntax.html#syntax-tag-omission
-const disallowedContents = new Map([
+const disallowed_contents = new Map([
 	['li', new Set(['li'])],
 	['dt', new Set(['dt', 'dd'])],
 	['dd', new Set(['dt', 'dd'])],
@@ -12410,7 +12467,7 @@ const disallowedContents = new Map([
 	['th', new Set(['td', 'th', 'tr'])],
 ]);
 
-function parentIsHead(stack) {
+function parent_is_head(stack) {
 	let i = stack.length;
 	while (i--) {
 		const { type } = stack[i];
@@ -12426,7 +12483,7 @@ function tag(parser) {
 	let parent = parser.current();
 
 	if (parser.eat('!--')) {
-		const data = parser.readUntil(/-->/);
+		const data = parser.read_until(/-->/);
 		parser.eat('-->', true, 'comment was left open, expected -->');
 
 		parser.current().children.push({
@@ -12439,13 +12496,13 @@ function tag(parser) {
 		return;
 	}
 
-	const isClosingTag = parser.eat('/');
+	const is_closing_tag = parser.eat('/');
 
-	const name = readTagName(parser);
+	const name = read_tag_name(parser);
 
-	if (metaTags.has(name)) {
-		const slug = metaTags.get(name).toLowerCase();
-		if (isClosingTag) {
+	if (meta_tags.has(name)) {
+		const slug = meta_tags.get(name).toLowerCase();
+		if (is_closing_tag) {
 			if (
 				(name === 'svelte:window' || name === 'svelte:body') &&
 				parser.current().children.length
@@ -12456,7 +12513,7 @@ function tag(parser) {
 				}, parser.current().children[0].start);
 			}
 		} else {
-			if (name in parser.metaTags) {
+			if (name in parser.meta_tags) {
 				parser.error({
 					code: `duplicate-${slug}`,
 					message: `A component can only have one <${name}> tag`
@@ -12470,15 +12527,15 @@ function tag(parser) {
 				}, start);
 			}
 
-			parser.metaTags[name] = true;
+			parser.meta_tags[name] = true;
 		}
 	}
 
-	const type = metaTags.has(name)
-		? metaTags.get(name)
+	const type = meta_tags.has(name)
+		? meta_tags.get(name)
 		: (/[A-Z]/.test(name[0]) || name === 'svelte:self' || name === 'svelte:component') ? 'InlineComponent'
-		: name === 'title' && parentIsHead(parser.stack) ? 'Title'
-		: name === 'slot' && !parser.customElement ? 'Slot' : 'Element';
+			: name === 'title' && parent_is_head(parser.stack) ? 'Title'
+				: name === 'slot' && !parser.customElement ? 'Slot' : 'Element';
 
 	const element = {
 		start,
@@ -12489,10 +12546,10 @@ function tag(parser) {
 		children: [],
 	};
 
-	parser.allowWhitespace();
+	parser.allow_whitespace();
 
-	if (isClosingTag) {
-		if (isVoidElementName(name)) {
+	if (is_closing_tag) {
+		if (is_void(name)) {
 			parser.error({
 				code: `invalid-void-content`,
 				message: `<${name}> is a void element and cannot have children, or a closing tag`
@@ -12519,47 +12576,25 @@ function tag(parser) {
 		parser.stack.pop();
 
 		return;
-	} else if (disallowedContents.has(parent.name)) {
+	} else if (disallowed_contents.has(parent.name)) {
 		// can this be a child of the parent element, or does it implicitly
 		// close it, like `<li>one<li>two`?
-		if (disallowedContents.get(parent.name).has(name)) {
+		if (disallowed_contents.get(parent.name).has(name)) {
 			parent.end = start;
 			parser.stack.pop();
 		}
 	}
 
-	// TODO should this still error in in web component mode?
-	// if (name === 'slot') {
-	// 	let i = parser.stack.length;
-	// 	while (i--) {
-	// 		const item = parser.stack[i];
-	// 		if (item.type === 'EachBlock') {
-	// 			parser.error({
-	// 				code: `invalid-slot-placement`,
-	// 				message: `<slot> cannot be a child of an each-block`
-	// 			}, start);
-	// 		}
-	// 	}
-	// }
-
-	const uniqueNames = new Set();
+	const unique_names = new Set();
 
 	let attribute;
-	while ((attribute = readAttribute(parser, uniqueNames))) {
-		if (attribute.type === 'Binding' && !parser.allowBindings) {
-			parser.error({
-				code: `binding-disabled`,
-				message: `Two-way binding is disabled`
-			}, attribute.start);
-		}
-
+	while ((attribute = read_attribute(parser, unique_names))) {
 		element.attributes.push(attribute);
-		parser.allowWhitespace();
+		parser.allow_whitespace();
 	}
 
 	if (name === 'svelte:component') {
-		// TODO post v2, treat this just as any other attribute
-		const index = element.attributes.findIndex(attr => attr.name === 'this');
+		const index = element.attributes.findIndex(attr => attr.type === 'Attribute' && attr.name === 'this');
 		if (!~index) {
 			parser.error({
 				code: `missing-component-definition`,
@@ -12590,16 +12625,16 @@ function tag(parser) {
 
 	parser.current().children.push(element);
 
-	const selfClosing = parser.eat('/') || isVoidElementName(name);
+	const self_closing = parser.eat('/') || is_void(name);
 
 	parser.eat('>', true);
 
-	if (selfClosing) {
+	if (self_closing) {
 		// don't push self-closing elements onto the stack
 		element.end = parser.index;
 	} else if (name === 'textarea') {
 		// special case
-		element.children = readSequence$1(
+		element.children = read_sequence(
 			parser,
 			() =>
 				parser.template.slice(parser.index, parser.index + 11) === '</textarea>'
@@ -12609,7 +12644,7 @@ function tag(parser) {
 	} else if (name === 'script') {
 		// special case
 		const start = parser.index;
-		const data = parser.readUntil(/<\/script>/);
+		const data = parser.read_until(/<\/script>/);
 		const end = parser.index;
 		element.children.push({ start, end, type: 'Text', data });
 		parser.eat('</script>', true);
@@ -12617,7 +12652,7 @@ function tag(parser) {
 	} else if (name === 'style') {
 		// special case
 		const start = parser.index;
-		const data = parser.readUntil(/<\/style>/);
+		const data = parser.read_until(/<\/style>/);
 		const end = parser.index;
 		element.children.push({ start, end, type: 'Text', data });
 		parser.eat('</style>', true);
@@ -12626,7 +12661,7 @@ function tag(parser) {
 	}
 }
 
-function readTagName(parser) {
+function read_tag_name(parser) {
 	const start = parser.index;
 
 	if (parser.read(SELF)) {
@@ -12655,9 +12690,9 @@ function readTagName(parser) {
 
 	if (parser.read(COMPONENT)) return 'svelte:component';
 
-	const name = parser.readUntil(/(\s|\/|>)/);
+	const name = parser.read_until(/(\s|\/|>)/);
 
-	if (metaTags.has(name)) return name;
+	if (meta_tags.has(name)) return name;
 
 	if (name.startsWith('svelte:')) {
 		const match = fuzzymatch(name.slice(7), valid_meta_tags);
@@ -12671,7 +12706,7 @@ function readTagName(parser) {
 		}, start);
 	}
 
-	if (!validTagName.test(name)) {
+	if (!valid_tag_name.test(name)) {
 		parser.error({
 			code: `invalid-tag-name`,
 			message: `Expected valid tag name`
@@ -12681,16 +12716,16 @@ function readTagName(parser) {
 	return name;
 }
 
-function readAttribute(parser, uniqueNames) {
+function read_attribute(parser, unique_names) {
 	const start = parser.index;
 
 	if (parser.eat('{')) {
-		parser.allowWhitespace();
+		parser.allow_whitespace();
 
 		if (parser.eat('...')) {
-			const expression = readExpression(parser);
+			const expression = read_expression(parser);
 
-			parser.allowWhitespace();
+			parser.allow_whitespace();
 			parser.eat('}', true);
 
 			return {
@@ -12700,10 +12735,10 @@ function readAttribute(parser, uniqueNames) {
 				expression
 			};
 		} else {
-			const valueStart = parser.index;
+			const value_start = parser.index;
 
-			const name = parser.readIdentifier();
-			parser.allowWhitespace();
+			const name = parser.read_identifier();
+			parser.allow_whitespace();
 			parser.eat('}', true);
 
 			return {
@@ -12712,12 +12747,12 @@ function readAttribute(parser, uniqueNames) {
 				type: 'Attribute',
 				name,
 				value: [{
-					start: valueStart,
-					end: valueStart + name.length,
+					start: value_start,
+					end: value_start + name.length,
 					type: 'AttributeShorthand',
 					expression: {
-						start: valueStart,
-						end: valueStart + name.length,
+						start: value_start,
+						end: value_start + name.length,
 						type: 'Identifier',
 						name
 					}
@@ -12726,28 +12761,36 @@ function readAttribute(parser, uniqueNames) {
 		}
 	}
 
-	let name = parser.readUntil(/(\s|=|\/|>)/);
+	let name = parser.read_until(/[\s=\/>"']/);
 	if (!name) return null;
-	if (uniqueNames.has(name)) {
+
+	let end = parser.index;
+
+	parser.allow_whitespace();
+
+	const colon_index = name.indexOf(':');
+	const type = colon_index !== -1 && get_directive_type(name.slice(0, colon_index));
+
+	if (unique_names.has(name)) {
 		parser.error({
 			code: `duplicate-attribute`,
 			message: 'Attributes need to be unique'
 		}, start);
 	}
 
-	uniqueNames.add(name);
-
-	let end = parser.index;
-
-	parser.allowWhitespace();
-
-	const colon_index = name.indexOf(':');
-	const type = colon_index !== -1 && get_directive_type(name.slice(0, colon_index));
+	if (type !== "EventHandler") {
+		unique_names.add(name);
+	}
 
 	let value = true;
 	if (parser.eat('=')) {
-		value = readAttributeValue(parser);
+		value = read_attribute_value(parser);
 		end = parser.index;
+	} else if (parser.match_regex(/["']/)) {
+		parser.error({
+			code: `unexpected-token`,
+			message: `Expected =`
+		}, parser.index);
 	}
 
 	if (type) {
@@ -12816,23 +12859,23 @@ function get_directive_type(name) {
 	if (name === 'in' || name === 'out' || name === 'transition') return 'Transition';
 }
 
-function readAttributeValue(parser) {
-	const quoteMark = parser.eat(`'`) ? `'` : parser.eat(`"`) ? `"` : null;
+function read_attribute_value(parser) {
+	const quote_mark = parser.eat(`'`) ? `'` : parser.eat(`"`) ? `"` : null;
 
 	const regex = (
-		quoteMark === `'` ? /'/ :
-		quoteMark === `"` ? /"/ :
-		/(\/>|[\s"'=<>`])/
+		quote_mark === `'` ? /'/ :
+			quote_mark === `"` ? /"/ :
+				/(\/>|[\s"'=<>`])/
 	);
 
-	const value = readSequence$1(parser, () => !!parser.matchRegex(regex));
+	const value = read_sequence(parser, () => !!parser.match_regex(regex));
 
-	if (quoteMark) parser.index += 1;
+	if (quote_mark) parser.index += 1;
 	return value;
 }
 
-function readSequence$1(parser, done) {
-	let currentChunk = {
+function read_sequence(parser, done) {
+	let current_chunk = {
 		start: parser.index,
 		end: null,
 		type: 'Text',
@@ -12845,25 +12888,25 @@ function readSequence$1(parser, done) {
 		const index = parser.index;
 
 		if (done()) {
-			currentChunk.end = parser.index;
+			current_chunk.end = parser.index;
 
-			if (currentChunk.data) chunks.push(currentChunk);
+			if (current_chunk.data) chunks.push(current_chunk);
 
 			chunks.forEach(chunk => {
 				if (chunk.type === 'Text')
-					chunk.data = decodeCharacterReferences(chunk.data);
+					chunk.data = decode_character_references(chunk.data);
 			});
 
 			return chunks;
 		} else if (parser.eat('{')) {
-			if (currentChunk.data) {
-				currentChunk.end = index;
-				chunks.push(currentChunk);
+			if (current_chunk.data) {
+				current_chunk.end = index;
+				chunks.push(current_chunk);
 			}
 
-			parser.allowWhitespace();
-			const expression = readExpression(parser);
-			parser.allowWhitespace();
+			parser.allow_whitespace();
+			const expression = read_expression(parser);
+			parser.allow_whitespace();
 			parser.eat('}', true);
 
 			chunks.push({
@@ -12873,14 +12916,14 @@ function readSequence$1(parser, done) {
 				expression,
 			});
 
-			currentChunk = {
+			current_chunk = {
 				start: parser.index,
 				end: null,
 				type: 'Text',
 				data: '',
 			};
 		} else {
-			currentChunk.data += parser.template[parser.index++];
+			current_chunk.data += parser.template[parser.index++];
 		}
 	}
 
@@ -12890,7 +12933,7 @@ function readSequence$1(parser, done) {
 	});
 }
 
-function errorOnAssignmentPattern(parser) {
+function error_on_assignment_pattern(parser) {
 	if (parser.eat('=')) {
 		parser.error({
 			code: 'invalid-assignment-pattern',
@@ -12899,7 +12942,14 @@ function errorOnAssignmentPattern(parser) {
 	}
 }
 
-function readContext(parser) {
+function error_on_rest_pattern_not_last(parser) {
+	parser.error({
+		code: 'rest-pattern-not-last',
+		message: 'Rest destructuring expected to be last'
+	}, parser.index);
+}
+
+function read_context(parser) {
 	const context = {
 		start: parser.index,
 		end: null,
@@ -12911,17 +12961,22 @@ function readContext(parser) {
 		context.elements = [];
 
 		do {
-			parser.allowWhitespace();
+			parser.allow_whitespace();
+
+			const lastContext = context.elements[context.elements.length - 1];
+			if (lastContext && lastContext.type === 'RestIdentifier') {
+				error_on_rest_pattern_not_last(parser);
+			}
 
 			if (parser.template[parser.index] === ',') {
 				context.elements.push(null);
 			} else {
-				context.elements.push(readContext(parser));
-				parser.allowWhitespace();
+				context.elements.push(read_context(parser));
+				parser.allow_whitespace();
 			}
 		} while (parser.eat(','));
 
-		errorOnAssignmentPattern(parser);
+		error_on_assignment_pattern(parser);
 		parser.eat(']', true);
 		context.end = parser.index;
 	}
@@ -12931,20 +12986,55 @@ function readContext(parser) {
 		context.properties = [];
 
 		do {
-			parser.allowWhitespace();
+			parser.allow_whitespace();
+
+			if (parser.eat('...')) {
+				parser.allow_whitespace();
+
+				const start = parser.index;
+				const name = parser.read_identifier();
+				const key = {
+					start,
+					end: parser.index,
+					type: 'Identifier',
+					name
+				};
+				const property = {
+					start,
+					end: parser.index,
+					type: 'Property',
+					kind: 'rest',
+					shorthand: true,
+					key,
+					value: key
+				};
+
+				context.properties.push(property);
+
+				parser.allow_whitespace();
+
+				if (parser.eat(',')) {
+					parser.error({
+						code: `comma-after-rest`,
+						message: `Comma is not permitted after the rest element`
+					}, parser.index - 1);
+				}
+
+				break;
+			}
 
 			const start = parser.index;
-			const name = parser.readIdentifier();
+			const name = parser.read_identifier();
 			const key = {
 				start,
 				end: parser.index,
 				type: 'Identifier',
 				name
 			};
-			parser.allowWhitespace();
+			parser.allow_whitespace();
 
 			const value = parser.eat(':')
-				? (parser.allowWhitespace(), readContext(parser))
+				? (parser.allow_whitespace(), read_context(parser))
 				: key;
 
 			const property = {
@@ -12959,16 +13049,32 @@ function readContext(parser) {
 
 			context.properties.push(property);
 
-			parser.allowWhitespace();
+			parser.allow_whitespace();
 		} while (parser.eat(','));
 
-		errorOnAssignmentPattern(parser);
+		error_on_assignment_pattern(parser);
 		parser.eat('}', true);
 		context.end = parser.index;
 	}
 
+	else if (parser.eat('...')) {
+		const name = parser.read_identifier();
+		if (name) {
+			context.type = 'RestIdentifier';
+			context.end = parser.index;
+			context.name = name;
+		}
+
+		else {
+			parser.error({
+				code: 'invalid-context',
+				message: 'Expected a rest pattern'
+			});
+		}
+	}
+
 	else {
-		const name = parser.readIdentifier();
+		const name = parser.read_identifier();
 		if (name) {
 			context.type = 'Identifier';
 			context.end = parser.index;
@@ -12982,7 +13088,7 @@ function readContext(parser) {
 			});
 		}
 
-		errorOnAssignmentPattern(parser);
+		error_on_assignment_pattern(parser);
 	}
 
 	return context;
@@ -12990,42 +13096,42 @@ function readContext(parser) {
 
 const whitespace = /[ \t\r\n]/;
 
-function trimStart(str) {
+function trim_start(str) {
 	let i = 0;
 	while (whitespace.test(str[i])) i += 1;
 
 	return str.slice(i);
 }
 
-function trimEnd(str) {
+function trim_end(str) {
 	let i = str.length;
 	while (whitespace.test(str[i - 1])) i -= 1;
 
 	return str.slice(0, i);
 }
 
-function trimWhitespace(block, trimBefore, trimAfter) {
+function trim_whitespace(block, trim_before, trim_after) {
 	if (!block.children || block.children.length === 0) return; // AwaitBlock
 
-	const firstChild = block.children[0];
-	const lastChild = block.children[block.children.length - 1];
+	const first_child = block.children[0];
+	const last_child = block.children[block.children.length - 1];
 
-	if (firstChild.type === 'Text' && trimBefore) {
-		firstChild.data = trimStart(firstChild.data);
-		if (!firstChild.data) block.children.shift();
+	if (first_child.type === 'Text' && trim_before) {
+		first_child.data = trim_start(first_child.data);
+		if (!first_child.data) block.children.shift();
 	}
 
-	if (lastChild.type === 'Text' && trimAfter) {
-		lastChild.data = trimEnd(lastChild.data);
-		if (!lastChild.data) block.children.pop();
+	if (last_child.type === 'Text' && trim_after) {
+		last_child.data = trim_end(last_child.data);
+		if (!last_child.data) block.children.pop();
 	}
 
 	if (block.else) {
-		trimWhitespace(block.else, trimBefore, trimAfter);
+		trim_whitespace(block.else, trim_before, trim_after);
 	}
 
-	if (firstChild.elseif) {
-		trimWhitespace(firstChild, trimBefore, trimAfter);
+	if (first_child.elseif) {
+		trim_whitespace(first_child, trim_before, trim_after);
 	}
 }
 
@@ -13033,9 +13139,9 @@ function mustache(parser) {
 	const start = parser.index;
 	parser.index += 1;
 
-	parser.allowWhitespace();
+	parser.allow_whitespace();
 
-	// {/if} or {/each}
+	// {/if}, {/each} or {/await}
 	if (parser.eat('/')) {
 		let block = parser.current();
 		let expected;
@@ -13062,7 +13168,7 @@ function mustache(parser) {
 		}
 
 		parser.eat(expected, true);
-		parser.allowWhitespace();
+		parser.allow_whitespace();
 		parser.eat('}', true);
 
 		while (block.elseif) {
@@ -13076,12 +13182,12 @@ function mustache(parser) {
 		}
 
 		// strip leading/trailing whitespace as necessary
-		const charBefore = parser.template[block.start - 1];
-		const charAfter = parser.template[parser.index];
-		const trimBefore = !charBefore || whitespace.test(charBefore);
-		const trimAfter = !charAfter || whitespace.test(charAfter);
+		const char_before = parser.template[block.start - 1];
+		const char_after = parser.template[parser.index];
+		const trim_before = !char_before || whitespace.test(char_before);
+		const trim_after = !char_after || whitespace.test(char_after);
 
-		trimWhitespace(block, trimBefore, trimAfter);
+		trim_whitespace(block, trim_before, trim_after);
 
 		block.end = parser.index;
 		parser.stack.pop();
@@ -13093,7 +13199,7 @@ function mustache(parser) {
 			});
 		}
 
-		parser.allowWhitespace();
+		parser.allow_whitespace();
 
 		// :else if
 		if (parser.eat('if')) {
@@ -13104,11 +13210,11 @@ function mustache(parser) {
 					message: 'Cannot have an {:else if ...} block outside an {#if ...} block'
 				});
 
-			parser.requireWhitespace();
+			parser.require_whitespace();
 
-			const expression = readExpression(parser);
+			const expression = read_expression(parser);
 
-			parser.allowWhitespace();
+			parser.allow_whitespace();
 			parser.eat('}', true);
 
 			block.else = {
@@ -13140,7 +13246,7 @@ function mustache(parser) {
 				});
 			}
 
-			parser.allowWhitespace();
+			parser.allow_whitespace();
 			parser.eat('}', true);
 
 			block.else = {
@@ -13154,52 +13260,54 @@ function mustache(parser) {
 		}
 	} else if (parser.eat(':then')) {
 		// TODO DRY out this and the next section
-		const pendingBlock = parser.current();
-		if (pendingBlock.type === 'PendingBlock') {
-			pendingBlock.end = start;
+		const pending_block = parser.current();
+		if (pending_block.type === 'PendingBlock') {
+			pending_block.end = start;
 			parser.stack.pop();
-			const awaitBlock = parser.current();
+			const await_block = parser.current();
 
 			if (!parser.eat('}')) {
-				parser.requireWhitespace();
-				awaitBlock.value = parser.readIdentifier();
-				parser.allowWhitespace();
+				parser.require_whitespace();
+				await_block.value = parser.read_identifier();
+				parser.allow_whitespace();
 				parser.eat('}', true);
 			}
 
-			const thenBlock = {
+			const then_block = {
 				start,
 				end: null,
 				type: 'ThenBlock',
-				children: []
+				children: [],
+				skip: false
 			};
 
-			awaitBlock.then = thenBlock;
-			parser.stack.push(thenBlock);
+			await_block.then = then_block;
+			parser.stack.push(then_block);
 		}
 	} else if (parser.eat(':catch')) {
-		const thenBlock = parser.current();
-		if (thenBlock.type === 'ThenBlock') {
-			thenBlock.end = start;
+		const then_block = parser.current();
+		if (then_block.type === 'ThenBlock') {
+			then_block.end = start;
 			parser.stack.pop();
-			const awaitBlock = parser.current();
+			const await_block = parser.current();
 
 			if (!parser.eat('}')) {
-				parser.requireWhitespace();
-				awaitBlock.error = parser.readIdentifier();
-				parser.allowWhitespace();
+				parser.require_whitespace();
+				await_block.error = parser.read_identifier();
+				parser.allow_whitespace();
 				parser.eat('}', true);
 			}
 
-			const catchBlock = {
+			const catch_block = {
 				start,
 				end: null,
 				type: 'CatchBlock',
-				children: []
+				children: [],
+				skip: false
 			};
 
-			awaitBlock.catch = catchBlock;
-			parser.stack.push(catchBlock);
+			await_block.catch = catch_block;
+			parser.stack.push(catch_block);
 		}
 	} else if (parser.eat('#')) {
 		// {#if foo}, {#each foo} or {#await foo}
@@ -13218,9 +13326,9 @@ function mustache(parser) {
 			});
 		}
 
-		parser.requireWhitespace();
+		parser.require_whitespace();
 
-		const expression = readExpression(parser);
+		const expression = read_expression(parser);
 
 		const block = type === 'AwaitBlock' ?
 			{
@@ -13234,19 +13342,22 @@ function mustache(parser) {
 					start: null,
 					end: null,
 					type: 'PendingBlock',
-					children: []
+					children: [],
+					skip: true
 				},
 				then: {
 					start: null,
 					end: null,
 					type: 'ThenBlock',
-					children: []
+					children: [],
+					skip: true
 				},
 				catch: {
 					start: null,
 					end: null,
 					type: 'CatchBlock',
-					children: []
+					children: [],
+					skip: true
 				},
 			} :
 			{
@@ -13257,50 +13368,43 @@ function mustache(parser) {
 				children: [],
 			};
 
-		parser.allowWhitespace();
+		parser.allow_whitespace();
 
 		// {#each} blocks must declare a context – {#each list as item}
 		if (type === 'EachBlock') {
 			parser.eat('as', true);
-			parser.requireWhitespace();
+			parser.require_whitespace();
 
-			block.context = readContext(parser);
+			block.context = read_context(parser);
 
-			parser.allowWhitespace();
+			parser.allow_whitespace();
 
 			if (parser.eat(',')) {
-				parser.allowWhitespace();
-				block.index = parser.readIdentifier();
+				parser.allow_whitespace();
+				block.index = parser.read_identifier();
 				if (!block.index) parser.error({
 					code: `expected-name`,
 					message: `Expected name`
 				});
 
-				parser.allowWhitespace();
+				parser.allow_whitespace();
 			}
 
 			if (parser.eat('(')) {
-				parser.allowWhitespace();
+				parser.allow_whitespace();
 
-				block.key = readExpression(parser);
-				parser.allowWhitespace();
+				block.key = read_expression(parser);
+				parser.allow_whitespace();
 				parser.eat(')', true);
-				parser.allowWhitespace();
-			} else if (parser.eat('@')) {
-				block.key = parser.readIdentifier();
-				if (!block.key) parser.error({
-					code: `expected-name`,
-					message: `Expected name`
-				});
-				parser.allowWhitespace();
+				parser.allow_whitespace();
 			}
 		}
 
-		let awaitBlockShorthand = type === 'AwaitBlock' && parser.eat('then');
-		if (awaitBlockShorthand) {
-			parser.requireWhitespace();
-			block.value = parser.readIdentifier();
-			parser.allowWhitespace();
+		let await_block_shorthand = type === 'AwaitBlock' && parser.eat('then');
+		if (await_block_shorthand) {
+			parser.require_whitespace();
+			block.value = parser.read_identifier();
+			parser.allow_whitespace();
 		}
 
 		parser.eat('}', true);
@@ -13309,15 +13413,25 @@ function mustache(parser) {
 		parser.stack.push(block);
 
 		if (type === 'AwaitBlock') {
-			const childBlock = awaitBlockShorthand ? block.then : block.pending;
-			childBlock.start = parser.index;
-			parser.stack.push(childBlock);
+			let child_block;
+			if (await_block_shorthand) {
+				block.then.skip = false;
+				child_block = block.then;
+			} else {
+				block.pending.skip = false;
+				child_block = block.pending;
+			}
+
+			child_block.start = parser.index;
+			parser.stack.push(child_block);
 		}
 	} else if (parser.eat('@html')) {
 		// {@html content} tag
-		const expression = readExpression(parser);
+		parser.require_whitespace();
 
-		parser.allowWhitespace();
+		const expression = read_expression(parser);
+
+		parser.allow_whitespace();
 		parser.eat('}', true);
 
 		parser.current().children.push({
@@ -13333,7 +13447,7 @@ function mustache(parser) {
 		if (parser.read(/\s*}/)) {
 			identifiers = [];
 		} else {
-			const expression = readExpression(parser);
+			const expression = read_expression(parser);
 
 			identifiers = expression.type === 'SequenceExpression'
 				? expression.expressions
@@ -13348,7 +13462,7 @@ function mustache(parser) {
 				}
 			});
 
-			parser.allowWhitespace();
+			parser.allow_whitespace();
 			parser.eat('}', true);
 		}
 
@@ -13359,9 +13473,9 @@ function mustache(parser) {
 			identifiers
 		});
 	} else {
-		const expression = readExpression(parser);
+		const expression = read_expression(parser);
 
-		parser.allowWhitespace();
+		parser.allow_whitespace();
 		parser.eat('}', true);
 
 		parser.current().children.push({
@@ -13390,7 +13504,7 @@ function text(parser) {
 		start,
 		end: parser.index,
 		type: 'Text',
-		data: decodeCharacterReferences(data),
+		data: decode_character_references(data),
 	});
 }
 
@@ -13404,68 +13518,6 @@ function fragment(parser) {
 	}
 
 	return text;
-}
-
-const reservedNames = new Set([
-	'arguments',
-	'await',
-	'break',
-	'case',
-	'catch',
-	'class',
-	'const',
-	'continue',
-	'debugger',
-	'default',
-	'delete',
-	'do',
-	'else',
-	'enum',
-	'eval',
-	'export',
-	'extends',
-	'false',
-	'finally',
-	'for',
-	'function',
-	'if',
-	'implements',
-	'import',
-	'in',
-	'instanceof',
-	'interface',
-	'let',
-	'new',
-	'null',
-	'package',
-	'private',
-	'protected',
-	'public',
-	'return',
-	'static',
-	'super',
-	'switch',
-	'this',
-	'throw',
-	'true',
-	'try',
-	'typeof',
-	'var',
-	'void',
-	'while',
-	'with',
-	'yield',
-]);
-
-// Adapted from https://github.com/acornjs/acorn/blob/6584815dca7440e00de841d1dad152302fdd7ca5/src/tokenize.js
-// Reproduced under MIT License https://github.com/acornjs/acorn/blob/master/LICENSE
-
-function fullCharCodeAt(str, i) {
-	let code = str.charCodeAt(i);
-	if (code <= 0xd7ff || code >= 0xe000) return code;
-
-	let next = str.charCodeAt(i + 1);
-	return (code << 10) + next - 0x35fdc00;
 }
 
 function getLocator(source, options) {
@@ -13509,37 +13561,37 @@ function locate(source, search, options) {
     return getLocator(source, options)(search, options && options.startIndex);
 }
 
-function tabsToSpaces(str) {
+function tabs_to_spaces(str) {
 	return str.replace(/^\t+/, match => match.split('\t').join('  '));
 }
 
-function getCodeFrame(
+function get_code_frame(
 	source,
 	line,
 	column
 ) {
 	const lines = source.split('\n');
 
-	const frameStart = Math.max(0, line - 2);
-	const frameEnd = Math.min(line + 3, lines.length);
+	const frame_start = Math.max(0, line - 2);
+	const frame_end = Math.min(line + 3, lines.length);
 
-	const digits = String(frameEnd + 1).length;
+	const digits = String(frame_end + 1).length;
 
 	return lines
-		.slice(frameStart, frameEnd)
+		.slice(frame_start, frame_end)
 		.map((str, i) => {
-			const isErrorLine = frameStart + i === line;
+			const isErrorLine = frame_start + i === line;
 
-			let lineNum = String(i + frameStart + 1);
-			while (lineNum.length < digits) lineNum = ` ${lineNum}`;
+			let line_num = String(i + frame_start + 1);
+			while (line_num.length < digits) line_num = ` ${line_num}`;
 
 			if (isErrorLine) {
 				const indicator =
-					repeat(' ', digits + 2 + tabsToSpaces(str.slice(0, column)).length) + '^';
-				return `${lineNum}: ${tabsToSpaces(str)}\n${indicator}`;
+					repeat(' ', digits + 2 + tabs_to_spaces(str.slice(0, column)).length) + '^';
+				return `${line_num}: ${tabs_to_spaces(str)}\n${indicator}`;
 			}
 
-			return `${lineNum}: ${tabsToSpaces(str)}`;
+			return `${line_num}: ${tabs_to_spaces(str)}`;
 		})
 		.join('\n');
 }
@@ -13577,7 +13629,7 @@ function error$1(message, props
 	error.pos = props.start;
 	error.filename = props.filename;
 
-	error.frame = getCodeFrame(props.source, start.line - 1, start.column);
+	error.frame = get_code_frame(props.source, start.line - 1, start.column);
 
 	throw error;
 }
@@ -13593,9 +13645,7 @@ class Parser$2 {
 	
 	__init3() {this.css = [];}
 	__init4() {this.js = [];}
-	__init5() {this.metaTags = {};}
-
-	
+	__init5() {this.meta_tags = {};}
 
 	constructor(template, options) {Parser$2.prototype.__init.call(this);Parser$2.prototype.__init2.call(this);Parser$2.prototype.__init3.call(this);Parser$2.prototype.__init4.call(this);Parser$2.prototype.__init5.call(this);
 		if (typeof template !== 'string') {
@@ -13605,8 +13655,6 @@ class Parser$2 {
 		this.template = template.replace(/\s+$/, '');
 		this.filename = options.filename;
 		this.customElement = options.customElement;
-
-		this.allowBindings = options.bind !== false;
 
 		this.html = {
 			start: null,
@@ -13660,7 +13708,7 @@ class Parser$2 {
 		return this.stack[this.stack.length - 1];
 	}
 
-	acornError(err) {
+	acorn_error(err) {
 		this.error({
 			code: `parse-error`,
 			message: err.message.replace(/ \(\d+:\d+\)$/, '')
@@ -13697,14 +13745,14 @@ class Parser$2 {
 		return this.template.slice(this.index, this.index + str.length) === str;
 	}
 
-	matchRegex(pattern) {
+	match_regex(pattern) {
 		const match = pattern.exec(this.template.slice(this.index));
 		if (!match || match.index !== 0) return null;
 
 		return match[0];
 	}
 
-	allowWhitespace() {
+	allow_whitespace() {
 		while (
 			this.index < this.template.length &&
 			whitespace.test(this.template[this.index])
@@ -13714,23 +13762,23 @@ class Parser$2 {
 	}
 
 	read(pattern) {
-		const result = this.matchRegex(pattern);
+		const result = this.match_regex(pattern);
 		if (result) this.index += result.length;
 		return result;
 	}
 
-	readIdentifier() {
+	read_identifier() {
 		const start = this.index;
 
 		let i = this.index;
 
-		const code = fullCharCodeAt(this.template, i);
+		const code = full_char_code_at(this.template, i);
 		if (!isIdentifierStart(code, true)) return null;
 
 		i += code <= 0xffff ? 1 : 2;
 
 		while (i < this.template.length) {
-			const code = fullCharCodeAt(this.template, i);
+			const code = full_char_code_at(this.template, i);
 
 			if (!isIdentifierChar(code, true)) break;
 			i += code <= 0xffff ? 1 : 2;
@@ -13738,7 +13786,7 @@ class Parser$2 {
 
 		const identifier = this.template.slice(this.index, this.index = i);
 
-		if (reservedNames.has(identifier)) {
+		if (reserved.has(identifier)) {
 			this.error({
 				code: `unexpected-reserved-word`,
 				message: `'${identifier}' is a reserved word in JavaScript and cannot be used here`
@@ -13748,7 +13796,7 @@ class Parser$2 {
 		return identifier;
 	}
 
-	readUntil(pattern) {
+	read_until(pattern) {
 		if (this.index >= this.template.length)
 			this.error({
 				code: `unexpected-eof`,
@@ -13767,7 +13815,7 @@ class Parser$2 {
 		return this.template.slice(start);
 	}
 
-	requireWhitespace() {
+	require_whitespace() {
 		if (!whitespace.test(this.template[this.index])) {
 			this.error({
 				code: `missing-whitespace`,
@@ -13775,7 +13823,7 @@ class Parser$2 {
 			});
 		}
 
-		this.allowWhitespace();
+		this.allow_whitespace();
 	}
 }
 
